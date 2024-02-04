@@ -449,7 +449,7 @@ int trilogy_build_auth_packet(trilogy_builder_t *builder, const char *user, cons
  *   TRILOGY_SYSERR - A system error occurred, check errno.
  */
 int trilogy_build_auth_switch_response_packet(trilogy_builder_t *builder, const char *pass, size_t pass_len,
-                                              const char *auth_plugin, const char *scramble);
+                                              const char *auth_plugin, const char *scramble, bool enable_cleartext_plugin);
 
 /* trilogy_build_change_db_packet - Build a change database command packet. This
  * command will change the default database for the connection.

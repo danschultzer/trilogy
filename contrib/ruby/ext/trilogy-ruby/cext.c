@@ -25,7 +25,7 @@ static ID id_socket, id_host, id_port, id_username, id_password, id_found_rows, 
     id_ivar_affected_rows, id_ivar_fields, id_ivar_last_insert_id, id_ivar_rows, id_ivar_query_time, id_password,
     id_database, id_ssl_ca, id_ssl_capath, id_ssl_cert, id_ssl_cipher, id_ssl_crl, id_ssl_crlpath, id_ssl_key,
     id_ssl_mode, id_tls_ciphersuites, id_tls_min_version, id_tls_max_version, id_multi_statement, id_multi_result,
-    id_from_code, id_from_errno, id_connection_options, id_max_allowed_packet;
+    id_from_code, id_from_errno, id_connection_options, id_max_allowed_packet, id_enable_cleartext_plugin;
 
 struct trilogy_ctx {
     trilogy_conn_t conn;
@@ -571,6 +571,10 @@ static VALUE rb_trilogy_connect(VALUE self, VALUE encoding, VALUE charset, VALUE
     if ((val = rb_hash_aref(opts, ID2SYM(id_tls_max_version))) != Qnil) {
         Check_Type(val, T_FIXNUM);
         connopt.tls_max_version = NUM2INT(val);
+    }
+
+    if (RTEST(rb_hash_aref(opts, ID2SYM(id_enable_cleartext_plugin)))) {
+        connopt.enable_cleartext_plugin = true;
     }
 
     int rc = try_connect(ctx, &handshake, &connopt);
@@ -1206,6 +1210,7 @@ RUBY_FUNC_EXPORTED void Init_cext()
     id_ivar_rows = rb_intern("@rows");
     id_ivar_query_time = rb_intern("@query_time");
     id_connection_options = rb_intern("@connection_options");
+    id_enable_cleartext_plugin = rb_intern("enable_cleartext_plugin");
 
     rb_trilogy_cast_init();
 

@@ -530,6 +530,13 @@ static void trilogy_pack_scramble_sha2_hash(const char *scramble, const char *pa
     }
 }
 
+static void trilogy_pack_clear_password(const char *password, size_t password_len,
+                                        uint8_t *buffer, unsigned int *buffer_len)
+{
+    *buffer_len = password_len;
+    memcpy(buffer, password, password_len + 1);
+}
+
 int trilogy_build_auth_packet(trilogy_builder_t *builder, const char *user, const char *pass, size_t pass_len,
                               const char *database, TRILOGY_CHARSET_t client_encoding, const char *auth_plugin,
                               const char *scramble, TRILOGY_CAPABILITIES_t flags)
@@ -600,14 +607,16 @@ fail:
 }
 
 int trilogy_build_auth_switch_response_packet(trilogy_builder_t *builder, const char *pass, size_t pass_len,
-                                              const char *auth_plugin, const char *scramble)
+                                              const char *auth_plugin, const char *scramble, bool enable_cleartext_plugin)
 {
     int rc = TRILOGY_OK;
     unsigned int auth_response_len = 0;
     uint8_t auth_response[EVP_MAX_MD_SIZE];
 
     if (pass_len > 0) {
-        if (!strcmp("caching_sha2_password", auth_plugin)) {
+        if (!strcmp("mysql_clear_password", auth_plugin) && enable_cleartext_plugin) {
+            trilogy_pack_clear_password(pass, pass_len, auth_response, &auth_response_len);
+        } else if (!strcmp("caching_sha2_password", auth_plugin)) {
             trilogy_pack_scramble_sha2_hash(scramble, pass, pass_len, auth_response, &auth_response_len);
         } else {
             trilogy_pack_scramble_native_hash(scramble, pass, pass_len, auth_response, &auth_response_len);

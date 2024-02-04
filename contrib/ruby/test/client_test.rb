@@ -30,6 +30,38 @@ class ClientTest < TrilogyTest
     ensure_closed client
   end
 
+  def test_trilogy_connect_with_clear_password
+    client = new_tcp_client username: "clear", password: "password", enable_cleartext_plugin: true
+    refute_nil client
+
+    results = client.query(<<-SQL).to_a
+      SELECT CURRENT_USER() AS User, IF(plugin='','Native MySQL',plugin) AS Auth_Method
+    SQL
+  
+    assert_equal [
+      ["\x00\x00\x00\x00\x00\x00\x00\x00".b, "\x00"],
+      ["\x00\x00\x00\x00\x00\x00\x00\x01".b, "\x01"],
+    ], results
+  ensure
+    ensure_closed client
+  end
+
+  def test_trilogy_connect_with_clear_password_without_enabling_cleartext_plugin
+    err = assert_raises Trilogy::ConnectionError do
+      new_tcp_client(username: "clear", password: "password")
+    end
+
+    assert_includes err.message, "Access denied for user 'clear'"
+  end
+
+  def test_trilogy_connect_with_clear_password_with_invalid_password
+    err = assert_raises Trilogy::ConnectionError do
+      new_tcp_client(username: "clear", password: "incorrect", enable_cleartext_plugin: true)
+    end
+
+    assert_includes err.message, "Access denied for user 'clear'"
+  end
+
   def test_trilogy_connect_tcp_to_wrong_port
     e = assert_raises Trilogy::ConnectionError do
       new_tcp_client port: 13307
